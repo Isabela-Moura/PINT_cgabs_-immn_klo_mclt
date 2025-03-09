@@ -112,18 +112,26 @@ thread_init (void)
 
 /*Inicializando a variável load_avg*/
 void
-init_load_avg(void){
+inicializar_load_avg(void){
   load_avg = CONVERT_FLOAT(0);
 }
 
+/*Atualizando o valor da variável load_avg*/
+void
+atualizar_load_avg()
+{
+  load_avg = FLOAT_MUL(CONVERT_FLOAT(59)/60, load_avg) + (CONVERT_FLOAT(1)/60) 
+  * (thread_current() == idle_thread ? list_size(&ready_list): list_size(&ready_list) + 1);
+}
+
 /*Calculando a prioridade da thread*/
-int calculate_priority (struct thread *t) {
+int calcular_prioridade (struct thread *t) {
   return PRI_MAX - ROUND(t->recent_cpu / 4) - (t->nice * 2);
 }
 
 /*Atualizando a prioridade da thread*/
-int update_priority (struct thread *t, void *aux) {
-  t->priority = calculate_priority(t);
+int atualizar_prioridade (struct thread *t, void *aux) {
+  t->priority = calcular_prioridade(t);
 
   if(t->priority < PRI_MIN)
   {
@@ -136,21 +144,21 @@ int update_priority (struct thread *t, void *aux) {
 }
 
 /*Comparando prioridades de duas threads*/
-bool comparate_priority(const struct list_elem *a, const struct list_elem *b, void *aux){
+bool comparar_prioridade(const struct list_elem *a, const struct list_elem *b, void *aux){
   int64_t priority_a = list_entry (a, struct thread, elem)->priority;
   int64_t priority_b = list_entry (b, struct thread, elem)->priority;
   return priority_a > priority_b ? true : false;
 }
 
 /*Descobrindo se a prioridade de A é maior ou igual a prioridade de B*/
-bool priority_greater_than_or_equal_to(const struct list_elem *a, const struct list_elem *b, void *aux){
+bool prioridade_maior_ou_igual(const struct list_elem *a, const struct list_elem *b, void *aux){
   int64_t priority_a = list_entry (a, struct thread, elem)->priority;
   int64_t priority_b = list_entry (b, struct thread, elem)->priority;
   return priority_a >= priority_b ? true : false;
 }
 
 /*Calculando a decadência (Mecanismo de ajuste do comportamento do sistema)*/
-int calculate_decay (void) {
+int calcular_decay (void) {
 
   return FLOAT_DIV(2 * load_avg, (2 * load_avg + CONVERT_FLOAT(1)));
 
@@ -164,7 +172,7 @@ void recent_cpu (struct thread *t, void *aux) {
 }
 
 /*Atualizando o valor da variável recent_cpu da thread*/
-void update_recent_cpu (struct thread *t) {
+void atualizar_recent_cpu (struct thread *t) {
 
   if (t != idle_thread)
   {
@@ -174,17 +182,9 @@ void update_recent_cpu (struct thread *t) {
 }
 
 /*Atualizando a prioridade da thread a partir da variável recent_cpu*/
-void update_priority_recent_cpu (struct thread *t, void *aux) {
+void atualizar_prioridade_recent_cpu (struct thread *t, void *aux) {
   recent_cpu(t, aux);
   t->priority = PRI_MAX - ROUND(t->recent_cpu / 4) - (t->nice*2);
-}
-
-/*Atualizando o valor da variável load_avg*/
-void
-update_load_avg()
-{
-  load_avg = FLOAT_MUL(CONVERT_FLOAT(59)/60, load_avg) + (CONVERT_FLOAT(1)/60) 
-  * (thread_current() == idle_thread ? list_size(&ready_list): list_size(&ready_list) + 1);
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -406,12 +406,12 @@ thread_yield (void)
     if(thread_mlfqs)
     {
       /*A thread é inserida na fila de prontos considerando prioridade e aplicando Round-Robin para empates*/
-      list_insert_ordered(&ready_list, &cur->elem, priority_greater_than_or_equal_to, NULL);
+      list_insert_ordered(&ready_list, &cur->elem, prioridade_maior_ou_igual, NULL);
     }
     else
     {
       /*A thread é inserida de forma ordenada na fila de prioridade*/
-      list_insert_ordered(&ready_list, &cur->elem, comparate_priority, NULL);
+      list_insert_ordered(&ready_list, &cur->elem, comparar_prioridade, NULL);
     }
   }
   cur->status = THREAD_READY;
@@ -420,7 +420,7 @@ thread_yield (void)
 }
 
 /*Compara o tempo de despertar de duas threads*/
-bool compare_wakeup_time(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
+bool comparar_wakeup_time(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
 	ASSERT (a != NULL && b!= NULL);
 	struct thread *threadA = list_entry (a, struct thread, elem);
 	struct thread *threadB = list_entry (b, struct thread, elem);
@@ -430,7 +430,7 @@ bool compare_wakeup_time(const struct list_elem *a, const struct list_elem *b, v
 
 /*Faz a thread atual dormir por um determinado tempo*/
 void
-thread_sleep(int64_t ticks)
+thread_dorme(int64_t ticks)
 {
   if (ticks <= 0) return;
 
@@ -445,7 +445,7 @@ thread_sleep(int64_t ticks)
 }
 
 /*Analisa a lista de threads adormecidas e acorda aquelas que o tempo de despertar já chegou*/
-void thread_wakeup(void){
+void thread_acorda(void){
   struct thread *t;
 	struct list_elem *current_elem = list_begin(&sleep_list), *next_elem;
 	 
@@ -470,8 +470,8 @@ void thread_wakeup(void){
 }
 
 /*Ordena as threads prontas para execução com base na prioridade de cada thread*/
-void sort_ready_list(){
-  list_sort(&ready_list, comparate_priority, NULL);
+void ordenar_ready_list(){
+  list_sort(&ready_list, comparar_prioridade, NULL);
 }
 
 /* Invoke function 'func' on all threads, passing along 'aux'.
@@ -491,7 +491,6 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
-/*MEXER DAQUI*/
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
@@ -531,7 +530,7 @@ thread_set_nice (int nice UNUSED)
 
   /*Recalculando a prioridade*/
   struct thread *thread = thread_current();
-  update_priority(thread, NULL);
+  atualizar_prioridade(thread, NULL);
 
   /*Se a lista de threads prontas nao estiver vazia, pega a thread com maior prioridade,
   converte em ponteiro, verifica se a prioridade dela é maior que a da thread atual*/

@@ -120,15 +120,16 @@ void thread_init (void);
 /*Funções novas implementadas*/
 /*detalhamento sobre cada uma*/
 /*em thread.c*/
-int calculate_priority (struct thread *t);
-void update_priority (struct thread *t, void *aux);
-bool comparate_priority(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
-bool priority_greater_than_or_equal_to(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
-int calculate_decay (void);
+void inicializar_load_avg(void)
+void atualizar_load_avg(void);
+int calcular_prioridade (struct thread *t);
+void atualizar_prioridade (struct thread *t, void *aux);
+bool comparar_prioridade(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+bool prioridade_maior_ou_igual(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+int calcular_decay (void);
 void recent_cpu (struct thread *t, void *aux);
-void update_recent_cpu (struct thread *t);
-void update_priority_recent_cpu (struct thread *t, void *aux);
-void update_load_avg(void);
+void atualizar_recent_cpu (struct thread *t);
+void atualizar_prioridade_recent_cpu (struct thread *t, void *aux);
 
 void thread_start (void);
 
@@ -151,10 +152,10 @@ void thread_yield (void);
 /*Funções novas implementadas*/
 /*detalhamento sobre cada uma*/
 /*em thread.c*/
-bool compare_wakeup_time(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
-void thread_sleep(int64_t ticks);
-void thread_wakeup();
-void sort_ready_list();
+bool comparar_wakeup_time(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+void thread_dorme(int64_t ticks);
+void thread_acorda();
+void ordena_ready_list();
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
