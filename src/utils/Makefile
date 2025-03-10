@@ -4,7 +4,7 @@ CC = gcc
 CFLAGS = -Wall -W
 LOADLIBES = -lm
 setitimer-helper: setitimer-helper.o
-squish-pty: squish-pty.o
+squish-pty: squish-pay.o
 squish-unix: squish-unix.o
 
 clean: 

@@ -7,7 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-#include "lib/kernel/list.h"
+#include "lib/kernel/list.h" /*So we can use lists*/
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -96,7 +96,7 @@ timer_sleep (int64_t ticks)
   if(timer_elapsed (start) < ticks){
 	  thread_sleep(start + ticks);
   }
-}
+} /*The threads will only sleep until the corect time*/
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
    turned on. */
@@ -182,12 +182,16 @@ timer_interrupt (struct intr_frame *args UNUSED)
       atualizar_load_avg();
       thread_foreach(recent_cpu, NULL);
     }
+    /*atualizar_recent_cpu and atualizar_load_avg were used for the
+    implementation of a scheduler that dynamically adjusts thread priorities*/
     if((timer_ticks() % 4) == 0){
       thread_foreach(atualizar_prioridade, NULL);
       sort_ready_list();
     }
   } 
-}
+} /*The timer_interrupt() function has been adjusted
+to support an MLFQ scheduler. We added thread_wakeup()
+for sleeping threads and functions that adjust CPU usage and priorities*/
 
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */

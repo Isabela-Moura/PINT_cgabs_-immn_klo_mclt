@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "lib/kernel/float.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -100,15 +101,10 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
-    /*Tempo para a thread acordar*/
-    int64_t wakeup_time;
-    /*O quanto a thread é "legal" com as outras*/
-    /*valores altos significam menor prioridade*/
-    /*enquanto valores baixos aumentam a prioridade*/
-    int nice;
-    /*O quanto de tempo da CPU a thread recebeu recentemente*/
-    int recent_cpu;
-   };
+    int64_t wakeup_time;  //tempo para a thread acordar 
+    int nice; //o quanto a thread é "legal" com as outras
+    int recent_cpu;  //mede o quanto de tempo da CPU a thread recebeu recentemente
+  };
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -117,19 +113,15 @@ extern bool thread_mlfqs;
 
 void thread_init (void);
 
-/*Funções novas implementadas*/
-/*detalhamento sobre cada uma*/
-/*em thread.c*/
-void inicializar_load_avg(void)
-void atualizar_load_avg(void);
 int calcular_prioridade (struct thread *t);
 void atualizar_prioridade (struct thread *t, void *aux);
 bool comparar_prioridade(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
-bool prioridade_maior_ou_igual(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+bool prioridade_maiorigual(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
 int calcular_decay (void);
 void recent_cpu (struct thread *t, void *aux);
 void atualizar_recent_cpu (struct thread *t);
-void atualizar_prioridade_recent_cpu (struct thread *t, void *aux);
+void atualizar_priori_recent_cpu (struct thread *t, void *aux);
+void atualizar_load_avg(void);
 
 void thread_start (void);
 
@@ -147,15 +139,12 @@ tid_t thread_tid (void);
 const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
-void thread_yield (void);
+void thread_yield (void); 
 
-/*Funções novas implementadas*/
-/*detalhamento sobre cada uma*/
-/*em thread.c*/
-bool comparar_wakeup_time(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
-void thread_dorme(int64_t ticks);
-void thread_acorda();
-void ordena_ready_list();
+bool compare_wakeup_time(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+void thread_sleep(int64_t ticks);
+void thread_wakeup();
+void sort_ready_list();
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
@@ -165,7 +154,7 @@ int thread_get_priority (void);
 void thread_set_priority (int);
 
 int thread_get_nice (void);
-void thread_set_nice (int);
+void thread_set_nice (int nice UNUSED);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
